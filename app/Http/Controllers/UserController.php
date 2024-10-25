@@ -2,114 +2,90 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use App\Models\Kelas;
 use App\Models\UserModel;
-use Illuminate\Http\Request;
-use App\Http\Requests\UserRequest;
-use Faker\Provider\UserAgent;
+use App\Models\Jurusan;
 
 class UserController extends Controller
 {
     public $userModel;
     public $kelasModel;
+    public $jurusanModel;
 
     public function __construct()
     {
         $this->userModel = new UserModel();
         $this->kelasModel = new Kelas();
+        $this->jurusanModel =new Jurusan();
     }
 
-    public function index() 
-    { 
-        $users = $this->userModel->getUser(); // Ambil data user dari model
-        
-        $data = [ 
-            'title' => 'Create User', 
-            'users' => $users,
-            'kelas' => $this->userModel->getUser(), // Kirim variabel $users ke view
-        ]; 
+    public function index()
+    {
+        $data = [
+            'users' => $this->userModel->getUser(),
+        ];
 
-        return view('list_user', $data); 
+        return view('list_user', $data);
     }
 
-
-    // public function index() 
-    // { 
-    //     $data = [ 
-    //         'title' => 'Create User', 
-    //         'kelas' => $this->userModel->getUser(), 
-    //     ]; 
-    
-    //     return view('list_user', $data); 
-    // }
-
-    public function create(){
-
+    public function create()
+    {
         $kelas = $this->kelasModel->getKelas();
+        $jurusan = Jurusan::all();
 
-        // $kelasModel = new Kelas ();
-
-        // $kelas = $kelasModel->getKelas();
+        $user = new UserModel();
 
         $data = [
-            'title' => 'Create User',
             'kelas' => $kelas,
+            'jurusan'=> $jurusan,
+            'user' => $user,
         ];
 
         return view('create_user', $data);
-        // return view('create_user', [
-        //     'kelas' => Kelas::all(),
-        // ]);
     }
 
-    public function store(Request $request) 
-    { 
-        $request->validate([
-            'nama' => 'required|string|max:255',
-            'npm' => 'required|string|max:255',
-            'kelas_id' => 'required|integer',
+
+    public function store(Request $request)
+    {
+        $validatedData = $request->validate([
+            'nama' => 'required|string|regex:/^[a-zA-Z\s]+$/|max:255',
+            'npm' => 'required|string|max:255|unique:user,npm',
+            'kelas_id' => 'required|exists:kelas,id',
+            'jurusan_id' => 'required|exists:jurusan,id',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
-        if ($request->hasFile('foto')){
+        if ($request->hasFile('foto')) {
             $foto = $request->file('foto');
             $fotoName = time() . '_' . $foto->getClientOriginalName();
-            $fotoPath = $foto->move(public_path('upload/img'), $fotoName); // Pindahkan ke folder upload/img dengan nama yang baru
-            // $fotoPath = $foto->move (('upload/img'), $foto);
+            $fotoPath = $foto->storeAs('uploads', $fotoName);
         } else {
-            $fotoPath = null;
+            $fotoPath = null; 
         }
 
-        $this->userModel->create([ 
-        'nama' => $request->input('nama'), 
-        'npm' => $request->input('npm'), 
-        'kelas_id' => $request->input('kelas_id'),
-        'foto' => $fotoPath ? $fotoName : null,
-        ]); 
-        return redirect()->to('/user')->with('success','user berhasil ditambahkan'); 
+        $this->userModel->create([
+            'nama' => $validatedData['nama'],
+            'npm' => $validatedData['npm'],
+            'kelas_id' => $validatedData['kelas_id'],
+            'jurusan_id' => $validatedData['jurusan_id'], 
+            'foto' => $fotoPath ? $fotoName : null,
+        ]);
+
+        return redirect()->to('/')->with('success', 'User berhasil ditambahkan');
     }
 
     public function show($id)
     {
-        $user = UserModel::findOrFail($id);
-        $kelas = Kelas::findOrFail($user->kelas_id);
+        $user = $this->userModel->getUser($id);
 
-        $title = 'Detail' . $user->nama;
+        $data = [
+            'title' => 'Profile',
+            'user' => $user,
+        ];
 
-        return view('show_user', compact('user','kelas','title'));
+        return view('profile', $data);
     }
-
-    // public function show($id){
-    //     $user = $this->userModel->getUser($id);
-
-    //     $data = [
-    //         'title' => 'Profile',
-    //         'user' => $user,
-
-    //     ];
-
-    //     return view ('profile', $data);
-    // }
 
     public function edit ($id)
     {
@@ -131,43 +107,21 @@ class UserController extends Controller
         if ($request->hasFile('foto')) {
             $foto = $request->file('foto');
             $fotoName = time() . '_' . $foto->getClientOriginalName();
-            $fotoPath = $foto->move(public_path('upload/img'), $fotoName); // Pindahkan file
-            $user->foto = $fotoName; // Simpan nama file ke database
+            $fotoPath = $foto->storeAs('uploads', $fotoName); 
+            $user->foto = $fotoName; 
         }
 
         $user->save();
 
-        return redirect()->route('user.list')->with('success', 'user updated successfully');
+        return redirect()->to('/')->with('success', 'User berhasil ditambahkan');
     }
 
     public function destroy($id)
     {
         $user = UserModel::findOrFail($id);
-        $user->delete(); // Memanggil fungsi delete
+        $user->delete(); 
     
         return redirect()->route('user.list')->with('success', 'User has been deleted successfully');
     }
     
-
-    // public function store(UserRequest $request)
-    // {
-    //     $validatedData = $request->validate([
-    //         'nama' => 'required|string|max:255',
-    //         'npm' => 'required|string|max:255',
-    //         'kelas_id' => 'required|exists:kelas,id',
-    //        ]);
-
-    //        $user = $this->userModel->create($validatedData);
-
-    //     //    $user = UserModel::create($validatedData);
-           
-    //        $user->load('kelas');
-
-    //     return view('profile', [
-    //         'nama' => $user->nama,
-    //         'npm' => $user->npm,
-    //         'nama_kelas' => $user->kelas->nama_kelas ?? 'Kelas tidak ditemukan',
-            
-    //     ]);
-    // }
 }

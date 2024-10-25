@@ -19,23 +19,25 @@
                     <th class="px-6 py-3 text-center text-sm font-medium uppercase tracking-wider">Nama</th>
                     <th class="px-6 py-3 text-center text-sm font-medium uppercase tracking-wider">NPM</th>
                     <th class="px-6 py-3 text-center text-sm font-medium uppercase tracking-wider">Kelas</th>
+                    <th class="px-6 py-3 text-center text-sm font-medium uppercase tracking-wider">Jurusan</th> <!-- Tambahkan kolom Jurusan -->
                     <th class="px-6 py-3 text-center text-sm font-medium uppercase tracking-wider">Foto</th>
                     <th class="px-6 py-3 text-center text-sm font-medium uppercase tracking-wider">Aksi</th>
                 </tr>
             </thead>            
             <tbody>
                 @foreach ($users as $user)
-                    <tr class=" hover:bg-gray-200 transition-colors">
+                    <tr class="hover:bg-gray-200 transition-colors">
                         <td class="px-6 py-4 border-b border-gray-200 text-center">{{ $user['id'] }}</td>
                         <td class="px-6 py-4 border-b border-gray-200 text-center">{{ $user['nama'] }}</td>
                         <td class="px-6 py-4 border-b border-gray-200 text-center">{{ $user['npm'] }}</td>
                         <td class="px-6 py-4 border-b border-gray-200 text-center">{{ $user['nama_kelas'] }}</td>
+                        <td class="px-6 py-4 border-b border-gray-200 text-center">{{ $user['nama_jurusan'] }}</td> 
                         <td class="px-6 py-4 border-b border-gray-200 text-center">
-                            @if($user->foto)
-                                <img src="{{ asset('upload/img/' . $user->foto) }}" alt="Foto {{ $user->nama }}" class="w-20 h-20 object-cover rounded">
-                            @else
-                                <span>Tidak ada foto</span>
-                            @endif
+                @if ($user['foto'])
+                    <img src="{{ asset('storage/uploads/' . $user['foto']) }}" alt="Foto User" class="img-thumbnail">
+                @else
+                <img src="{{ asset('assets/images/defaultProfile.jpg') }}" alt="Default Profile Image" class="img-thumbnail">
+                @endif
                         </td>
                         <td class="px-6 py-4 border-b border-gray-200 text-center">
                             <a href="{{ route('user.edit', $user['id']) }}" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
